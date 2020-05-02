@@ -24,8 +24,13 @@ class Transformation
 end
 
 class State
+  attr_reader :resources
   def initialize(resources)
     @resources = resources.dup
+  end
+
+  def to_s
+    resources.map { |r, q| "#{q} #{r}" }.join(', ')
   end
 
   def can_apply?(transformation)
@@ -68,11 +73,12 @@ class State
 end
 
 class World
-  def initialize(transformations, objective, max_round, init_state)
+  def initialize(transformations, objective, remaining_rounds, init_state, loose_1thrust_every_3rounds: false)
     @transformations = transformations
     @objective = objective
-    @max_round = max_round
+    @remaining_rounds = remaining_rounds
     @current_state = init_state
+    @loose_1thrust_every_3rounds = loose_1thrust_every_3rounds
   end
 
   # return nil if nothing is possible
@@ -80,7 +86,7 @@ class World
   # return [<Transformation>] if it leads to the solution
   def solve
     return [] if @current_state.achieved?(@objective)
-    return nil if @max_round <= 0
+    return nil if @remaining_rounds <= 0
 
     possible_transformations = @transformations.select { |transformation| @current_state.can_apply?(transformation) }
 
@@ -92,7 +98,11 @@ class World
 
     sorted_transformations.lazy.map do |transformation|
       future_state = @current_state.dup.apply(transformation)
-      world = World.new(@transformations, @objective, @max_round - 1, future_state)
+      if @loose_1thrust_every_3rounds && (@remaining_rounds - 1 % 3).zero?
+        r = future_state.resources
+        r[:thrust] -= 1 if r[:thrust] && r[:thrust] > 0
+      end
+      world = World.new(@transformations, @objective, @remaining_rounds - 1, future_state, loose_1thrust_every_3rounds: @loose_1thrust_every_3rounds)
       res = world.solve
       [transformation] + res if res
     end.select(&:itself).first
@@ -100,11 +110,12 @@ class World
 end
 
 class OptimalSolver
-  def initialize(transformations, objective, max_rounds, init_state)
+  def initialize(transformations, objective, max_rounds, init_state, loose_1thrust_every_3rounds: false)
     @transformations = transformations
     @objective = objective
     @max_rounds = max_rounds
     @init_state = init_state
+    @loose_1thrust_every_3rounds = loose_1thrust_every_3rounds
   end
 
   def run
@@ -114,16 +125,16 @@ class OptimalSolver
     until rounds.zero? || new_best_sol.nil?
       print "Trying to solve in #{rounds} rounds..."
       best_sol = new_best_sol
-      w = World.new(@transformations, @objective, rounds, @init_state)
+      w = World.new(@transformations, @objective, rounds, @init_state, loose_1thrust_every_3rounds: @loose_1thrust_every_3rounds)
       new_best_sol = w.solve
       rounds -= 1
-      puts (new_best_sol ? 'OK' : 'NOK')
+      puts(new_best_sol ? 'OK' : 'NOK')
     end
     best_sol
   end
 end
 
-# Dummy test1
+puts '------ Dummy test1 -----'
 state = State.new(coms: 0, electricity: 2)
 transformations = [
   Transformation.new(inputs: {}, outputs: { electricity: 1 }),
@@ -140,8 +151,7 @@ solution.each do |t|
   puts t
 end
 
-# Mars flyby - part 2
-puts '-----'
+puts '----- Mars flyby - part 2 -----'
 state = State.new(electricity: 5)
 transformations = [
   Transformation.new(inputs: {}, outputs: { electricity: 1 }),
@@ -162,6 +172,35 @@ objective = { coms: 5, data: 8, nav: 3 }
 
 max_rounds = 12
 solver = OptimalSolver.new(transformations, objective, max_rounds, state)
+solution = solver.run
+raise 'Could not find any solution' unless solution
+
+solution.each_with_index do |t, i|
+  puts "#{i + 1}: #{t}"
+end
+puts "Using #{solution.size} rounds out of #{max_rounds}"
+
+puts '------ Venus crasher - part 1  -----------'
+state = State.new(electricity: 5)
+transformations = [
+  Transformation.new(inputs: {}, outputs: { electricity: 1 }),
+
+  Transformation.new(inputs: { electricity: 1 }, outputs: { coms: 2 }),
+  Transformation.new(inputs: { data: 2 }, outputs: { coms: 2, nav: 2 }),
+  Transformation.new(inputs: { data: 1, nav: 1 }, outputs: { coms: 4 }),
+
+  Transformation.new(inputs: { electricity: 2 }, outputs: { data: 2 }),
+  Transformation.new(inputs: { nav: 1 }, outputs: { data: 2, coms: 1 }),
+  Transformation.new(inputs: { coms: 1, nav: 1 }, outputs: { data: 4 }),
+
+  Transformation.new(inputs: { electricity: 2 }, outputs: { nav: 2 }),
+  Transformation.new(inputs: { coms: 2 }, outputs: { nav: 1, thrust: 4 }),
+  Transformation.new(inputs: { data: 2 }, outputs: { nav: 3, coms: 1 }),
+]
+
+objective = { coms: 6, nav: 6, thrust: 8 }
+max_rounds = 12
+solver = OptimalSolver.new(transformations, objective, max_rounds, state, loose_1thrust_every_3rounds: true)
 solution = solver.run
 raise 'Could not find any solution' unless solution
 
