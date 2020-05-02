@@ -1,15 +1,4 @@
-#!/usr/bin/env ruby
-#
-
 require 'timeout'
-
-# rubocop:disable Lint/MissingCopEnableDirective
-# rubocop:disable Lint/UnneededCopDisableDirective
-# rubocop:disable Metrics/LineLength
-# rubocop:disable Style/Documentation
-# rubocop:disable Metrics/MethodLength
-# rubocop:disable Metrics/AbcSize
-# rubocop:disable Style/TrailingCommaInArrayLiteral
 
 class Transformation
   def initialize(inputs:, outputs:)
@@ -100,7 +89,8 @@ class World
 
     sorted_transformations.lazy.map do |transformation|
       future_state = @current_state.dup.apply(transformation)
-      if @loose_1thrust_every_3rounds && (@remaining_rounds - 1 % 3).zero?
+      if @loose_1thrust_every_3rounds && ((@remaining_rounds - 1) % 3).zero?
+        puts 'Should decrease thrust'
         r = future_state.resources
         r[:thrust] -= 1 if r[:thrust] && r[:thrust] > 0
       end
@@ -134,84 +124,16 @@ class OptimalSolver
                        print 'timeout...'
                        nil
                      end
-      rounds -= 1
       puts(new_best_sol ? 'OK' : 'NOK')
+      if new_best_sol
+        puts "  Known solution in #{rounds} rounds"
+        new_best_sol.each do |transition|
+          print '  '
+          puts transition
+        end
+      end
+      rounds -= 1
     end
     best_sol
   end
 end
-
-puts '------ Dummy test1 -----'
-state = State.new(coms: 0, electricity: 2)
-transformations = [
-  Transformation.new(inputs: {}, outputs: { electricity: 1 }),
-  Transformation.new(inputs: { electricity: 1 }, outputs: { data: 1 }),
-  Transformation.new(inputs: { electricity: 1 }, outputs: { coms: 1 }),
-]
-objective = { data: 2, coms: 1 }
-
-w = World.new(transformations, objective, 4, state)
-solution = w.solve
-raise 'Could not find any solution' unless solution
-
-solution.each do |t|
-  puts t
-end
-
-puts '----- Mars flyby - part 2 -----'
-state = State.new(electricity: 5)
-transformations = [
-  Transformation.new(inputs: {}, outputs: { electricity: 1 }),
-
-  Transformation.new(inputs: { electricity: 2 }, outputs: { coms: 2 }),
-  Transformation.new(inputs: { data: 1 }, outputs: { coms: 2, nav: 1 }),
-  Transformation.new(inputs: { nav: 1 }, outputs: { coms: 2, data: 1 }),
-
-  Transformation.new(inputs: { electricity: 1 }, outputs: { data: 2 }),
-  Transformation.new(inputs: { electricity: 1, coms: 2 }, outputs: { data: 3 }),
-  Transformation.new(inputs: { nav: 2 }, outputs: { data: 3 }),
-
-  Transformation.new(inputs: { electricity: 1 }, outputs: { nav: 2 }),
-  Transformation.new(inputs: { data: 1 }, outputs: { coms: 1, nav: 2 }),
-  Transformation.new(inputs: { coms: 1, electricity: 1 }, outputs: { nav: 4 }),
-]
-objective = { coms: 5, data: 8, nav: 3 }
-
-max_rounds = 12
-solver = OptimalSolver.new(transformations, objective, max_rounds, state)
-solution = solver.run
-raise 'Could not find any solution' unless solution
-
-solution.each_with_index do |t, i|
-  puts "#{i + 1}: #{t}"
-end
-puts "Using #{solution.size} rounds out of #{max_rounds}"
-
-puts '------ Venus crasher - part 1  -----------'
-state = State.new(electricity: 5)
-transformations = [
-  Transformation.new(inputs: {}, outputs: { electricity: 1 }),
-
-  Transformation.new(inputs: { electricity: 1 }, outputs: { coms: 2 }),
-  Transformation.new(inputs: { data: 2 }, outputs: { coms: 2, nav: 2 }),
-  Transformation.new(inputs: { data: 1, nav: 1 }, outputs: { coms: 4 }),
-
-  Transformation.new(inputs: { electricity: 2 }, outputs: { data: 2 }),
-  Transformation.new(inputs: { nav: 1 }, outputs: { data: 2, coms: 1 }),
-  Transformation.new(inputs: { coms: 1, nav: 1 }, outputs: { data: 4 }),
-
-  Transformation.new(inputs: { electricity: 2 }, outputs: { nav: 2 }),
-  Transformation.new(inputs: { coms: 2 }, outputs: { nav: 1, thrust: 4 }),
-  Transformation.new(inputs: { data: 2 }, outputs: { nav: 3, coms: 1 }),
-]
-
-objective = { coms: 6, nav: 6, thrust: 8 }
-max_rounds = 12
-solver = OptimalSolver.new(transformations, objective, max_rounds, state, loose_1thrust_every_3rounds: true)
-solution = solver.run
-raise 'Could not find any solution' unless solution
-
-solution.each_with_index do |t, i|
-  puts "#{i + 1}: #{t}"
-end
-puts "Using #{solution.size} rounds out of #{max_rounds}"
