@@ -1,6 +1,8 @@
 #!/usr/bin/env ruby
 #
 
+require 'timeout'
+
 # rubocop:disable Lint/MissingCopEnableDirective
 # rubocop:disable Lint/UnneededCopDisableDirective
 # rubocop:disable Metrics/LineLength
@@ -126,7 +128,12 @@ class OptimalSolver
       print "Trying to solve in #{rounds} rounds..."
       best_sol = new_best_sol
       w = World.new(@transformations, @objective, rounds, @init_state, loose_1thrust_every_3rounds: @loose_1thrust_every_3rounds)
-      new_best_sol = w.solve
+      new_best_sol = begin
+                       Timeout.timeout(15) { w.solve }
+                     rescue Timeout::Error
+                       print 'timeout...'
+                       nil
+                     end
       rounds -= 1
       puts(new_best_sol ? 'OK' : 'NOK')
     end
