@@ -77,3 +77,60 @@ solution.each_with_index do |t, i|
   puts "#{i + 1}: #{t}"
 end
 puts "Using #{solution.size} rounds out of #{max_rounds}"
+
+puts '---- Venus crasher - part 2 ---------'
+state = State.new(electricity: 6, heat: 2)
+transformations = [
+  Transformation.new(inputs: {}, outputs: { electricity: 1 }),
+
+  Transformation.new(inputs: { electricity: 2, heat: 1 }, outputs: { coms: 2 }),
+  Transformation.new(inputs: { data: 1 }, outputs: { coms: 2, nav: 1 }),
+  Transformation.new(inputs: { nav: 1 }, outputs: { coms: 2, data: 1 }),
+
+  Transformation.new(inputs: { electricity: 1 }, outputs: { data: 2 }),
+  Transformation.new(inputs: { electricity: 1, nav: 1 }, outputs: { data: 3 }),
+  Transformation.new(inputs: { nav: 2 }, outputs: { data: 3 }),
+
+  Transformation.new(inputs: { electricity: 1 }, outputs: { nav: 2 }),
+  Transformation.new(inputs: { data: 1, heat: 1 }, outputs: { nav: 2, coms: 1 }),
+  Transformation.new(inputs: { electricity: 1, coms: 1 }, outputs: { nav: 4 }),
+]
+objective = { coms: 5, data: 5, nav: 8 }
+
+solver = OptimalSolver.new(transformations, objective, max_rounds, state, max_heat: 5)
+solution = solver.run
+raise 'Could not find any solution' unless solution
+
+solution.each_with_index do |t, i|
+  puts "#{i + 1}: #{t}"
+end
+puts "Using #{solution.size} rounds out of #{max_rounds}"
+
+puts '---- Multicrew orbit ---------'
+max_rounds = 16
+state = State.new(electricity: 6, crew: 2)
+transformations = [
+  Transformation.new(inputs: {}, outputs: { electricity: 1 }),
+
+  Transformation.new(inputs: { electricity: 2, heat: 1 }, outputs: { coms: 2 }),
+  Transformation.new(inputs: { data: 1 }, outputs: { coms: 2, nav: 1 }),
+  Transformation.new(inputs: { nav: 1 }, outputs: { coms: 2, data: 1 }),
+
+  Transformation.new(inputs: { electricity: 1 }, outputs: { data: 2 }),
+  Transformation.new(inputs: { electricity: 1, nav: 1 }, outputs: { data: 3 }),
+  Transformation.new(inputs: { nav: 2 }, outputs: { data: 3 }),
+
+  Transformation.new(inputs: { electricity: 1 }, outputs: { nav: 2 }),
+  Transformation.new(inputs: { data: 1, heat: 1 }, outputs: { nav: 2, coms: 1 }),
+  Transformation.new(inputs: { electricity: 1, coms: 1 }, outputs: { nav: 4 }),
+]
+objective = { coms: 5, data: 5, nav: 8 }
+
+solver = OptimalSolver.new(transformations, objective, max_rounds, state, with_crew: 2)
+solution = solver.run
+raise 'Could not find any solution' unless solution
+
+solution.each_with_index do |t, i|
+  puts "#{i + 1}: #{t}"
+end
+puts "Using #{solution.size} rounds out of #{max_rounds}"
