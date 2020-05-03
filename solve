@@ -130,7 +130,7 @@ transformations = [
 ]
 objective = { coms: 12, data: 12, nav: 18 }
 
-solver = OptimalSolver.new(transformations, objective, max_rounds, state, with_crew: 2)
+solver = OptimalSolver.new(transformations, objective, max_rounds, state, with_crew: 2, rounds_per_turn: 4)
 solution = solver.run
 raise 'Could not find any solution' unless solution
 
@@ -159,7 +159,92 @@ transformations = [
 ]
 objective = { coms: 20, nav: 20 }
 
-solver = OptimalSolver.new(transformations, objective, max_rounds, state, with_crew: 2, max_heat: 4, heat_incr: 3)
+solver = OptimalSolver.new(transformations, objective, max_rounds, state, with_crew: 2, max_heat: 4, heat_incr: 3, rounds_per_turn: 4)
+solution = solver.run
+raise 'Could not find any solution' unless solution
+
+solution.each_with_index do |t, i|
+  puts "#{i + 1}: #{t}"
+end
+puts "Using #{solution.size} rounds out of #{max_rounds}"
+
+
+puts '---- Far side of the moon - part 1 ---------'
+max_rounds = 12
+state = State.new(electricity: 6)
+transformations = [
+  Transformation.new(inputs: {}, outputs: { electricity: 1 }),
+
+  Transformation.new(inputs: { electricity: 1 }, outputs: { coms: 2 }),
+  Transformation.new(inputs: { data: 2 }, outputs: { nav: 2, coms: 2 }),
+  Transformation.new(inputs: { nav: 1, data: 1 }, outputs: { coms: 4 }),
+
+  Transformation.new(inputs: { electricity: 1 }, outputs: { nav: 1 }),
+  Transformation.new(inputs: { electricity: 2 }, outputs: { nav: 2, data: 1 }),
+  Transformation.new(inputs: { nav: 1, coms: 1 }, outputs: { data: 3 }),
+]
+objective = { data: 7, nav: 3 }
+
+solver = OptimalSolver.new(transformations, objective, max_rounds, state)
+solution = solver.run
+raise 'Could not find any solution' unless solution
+
+solution.each_with_index do |t, i|
+  puts "#{i + 1}: #{t}"
+end
+puts "Using #{solution.size} rounds out of #{max_rounds}"
+
+
+puts '---- Far side of the moon - part 2 ---------'
+max_rounds = 12
+state = State.new(electricity: 6)
+transformations = [
+  Transformation.new(inputs: {}, outputs: { electricity: 1 }),
+
+  Transformation.new(inputs: { electricity: 1 }, outputs: { coms: 2 }),
+  Transformation.new(inputs: { data: 1 }, outputs: { nav: 1, coms: 2 }),
+  Transformation.new(inputs: { nav: 1 }, outputs: { coms: 2, data: 1 }),
+
+  Transformation.new(inputs: { electricity: 1 }, outputs: { data: 2 }),
+  Transformation.new(inputs: { electricity: 1, coms: 1 }, outputs: { data: 3 }),
+  Transformation.new(inputs: { nav: 2 }, outputs: { data: 3 }),
+
+  Transformation.new(inputs: { electricity: 1 }, outputs: { nav: 1 }),
+  Transformation.new(inputs: { data: 1 }, outputs: { nav: 2 }),
+  Transformation.new(inputs: { coms: 1 }, outputs: { data: 1, nav: 1 }),
+]
+objective = { data: 9, coms: 5 }
+
+solver = OptimalSolver.new(transformations, objective, max_rounds, state)
+solution = solver.run
+raise 'Could not find any solution' unless solution
+
+solution.each_with_index do |t, i|
+  puts "#{i + 1}: #{t}"
+end
+puts "Using #{solution.size} rounds out of #{max_rounds}"
+
+puts '---- System control check - part 1 ---------'
+max_rounds = 12
+state = State.new(electricity: 4, crew: 1)
+transformations = [
+  Transformation.new(inputs: {}, outputs: { electricity: 1 }),
+
+  Transformation.new(inputs: { electricity: 1 }, outputs: { coms: 2 }), # ground control
+  Transformation.new(inputs: { data: 2 }, outputs: { nav: 2, coms: 2 }), # packet transfer
+  Transformation.new(inputs: { data: 1, nav: 1 }, outputs: { coms: 4 }), # antenna alignement
+
+  Transformation.new(inputs: { electricity: 1 }, outputs: { nav: 1 }), # orbital plane adjustement
+  Transformation.new(inputs: { data: 1 }, outputs: { nav: 2 }), # flyover course adjustement
+  Transformation.new(inputs: { coms: 1 }, outputs: { data: 1, nav: 1 }), # positional triangulation
+
+  Transformation.new(inputs: { crew: 1 }, outputs: { data: 2 }), # mission report
+  Transformation.new(inputs: { crew: 1, coms: 1 }, outputs: { nav: 4 }), # module data processing
+  Transformation.new(inputs: { electricity: 1, crew: 1 }, outputs: { data: 2, nav: 2 }), # manual trajectory update
+]
+objective = { nav: 12, coms: 7 }
+
+solver = OptimalSolver.new(transformations, objective, max_rounds, state, with_crew: 1, rounds_per_turn: 3)
 solution = solver.run
 raise 'Could not find any solution' unless solution
 
