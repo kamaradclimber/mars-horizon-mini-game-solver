@@ -10,7 +10,7 @@ describe World do
     let(:transformations) do
       [
         Transformation.new(inputs: {}, outputs: { electricity: 1 }),
-        Transformation.new(inputs: {electricity: 2}, outputs: { thrust: 2 }),
+        Transformation.new(inputs: { electricity: 2 }, outputs: { thrust: 2 }),
       ]
     end
 

@@ -65,7 +65,8 @@ end
 
 class World
   def initialize(transformations, objective, remaining_rounds, init_state,
-                 loose_1thrust_every_3rounds: false, max_heat: nil, with_crew: false)
+                 loose_1thrust_every_3rounds: false, max_heat: nil, with_crew: false,
+                 heat_incr: 2)
     @transformations = transformations
     @objective = objective
     @remaining_rounds = remaining_rounds
@@ -73,6 +74,7 @@ class World
     @loose_1thrust_every_3rounds = loose_1thrust_every_3rounds
     @max_heat = max_heat
     @with_crew = with_crew
+    @heat_incr = heat_incr
   end
 
   # return nil if nothing is possible
@@ -99,7 +101,7 @@ class World
       if @max_heat && ((@remaining_rounds - 1) % 3).zero?
         r = future_state.resources
         r[:heat] ||= 0
-        r[:heat] += 2
+        r[:heat] += @heat_incr
         return nil if r[:heat] >= 5 # heat failure
       end
       if @with_crew && ((@remaining_rounds - 1) % 4).zero? # FIXME: every 4 round is hard coded
@@ -107,7 +109,8 @@ class World
         r[:crew] = @with_crew # reset crew
       end
       world = World.new(@transformations, @objective, @remaining_rounds - 1, future_state,
-                        loose_1thrust_every_3rounds: @loose_1thrust_every_3rounds, max_heat: @max_heat, with_crew: @with_crew)
+                        loose_1thrust_every_3rounds: @loose_1thrust_every_3rounds, max_heat: @max_heat, with_crew: @with_crew,
+                        heat_incr: @heat_incr)
       res = world.solve
       [transformation] + res if res
     end.select(&:itself).first
@@ -116,7 +119,8 @@ end
 
 class OptimalSolver
   def initialize(transformations, objective, max_rounds, init_state,
-                 loose_1thrust_every_3rounds: false, max_heat: nil, with_crew: false)
+                 loose_1thrust_every_3rounds: false, max_heat: nil, with_crew: false,
+                 heat_incr: 2)
     @transformations = transformations
     @objective = objective
     @max_rounds = max_rounds
@@ -124,6 +128,7 @@ class OptimalSolver
     @loose_1thrust_every_3rounds = loose_1thrust_every_3rounds
     @max_heat = max_heat
     @with_crew = with_crew
+    @heat_incr = heat_incr
   end
 
   def run
@@ -133,7 +138,7 @@ class OptimalSolver
     until rounds.zero? || new_best_sol.nil?
       print "Trying to solve in #{rounds} rounds..."
       best_sol = new_best_sol
-      w = World.new(@transformations, @objective, rounds, @init_state, loose_1thrust_every_3rounds: @loose_1thrust_every_3rounds, max_heat: @max_heat, with_crew: @with_crew)
+      w = World.new(@transformations, @objective, rounds, @init_state, loose_1thrust_every_3rounds: @loose_1thrust_every_3rounds, max_heat: @max_heat, with_crew: @with_crew, heat_incr: @heat_incr)
       new_best_sol = begin
                        Timeout.timeout(15) { w.solve }
                      rescue Timeout::Error
@@ -141,13 +146,13 @@ class OptimalSolver
                        nil
                      end
       puts(new_best_sol ? 'OK' : 'NOK')
-      if new_best_sol
-        puts "  Known solution in #{rounds} rounds"
-        new_best_sol.each do |transition|
-          print '  '
-          puts transition
-        end
-      end
+      # if new_best_sol
+      #  puts "  Known solution in #{rounds} rounds"
+      #  new_best_sol.each do |transition|
+      #    print '  '
+      #    puts transition
+      #  end
+      # end
       rounds -= 1
     end
     best_sol
