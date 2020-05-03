@@ -115,6 +115,7 @@ class World
 
     sorted_transformations.lazy.map do |transformation|
       future_state = @current_state.dup.apply(transformation)
+      # TODO(g.seux): we should compute according to number of elapsed rounds instead
       if @loose_1thrust_every_3rounds && ((@remaining_rounds - 1) % @rounds_per_turn).zero?
         r = future_state.resources
         r[:thrust] -= 1 if r[:thrust] && r[:thrust] > 0
@@ -122,8 +123,9 @@ class World
       if @max_heat && ((@remaining_rounds - 1) % @rounds_per_turn).zero?
         r = future_state.resources
         r[:heat] ||= 0
-        r[:heat] += @heat_incr
         return nil if r[:heat] >= @max_heat # heat failure
+
+        r[:heat] += @heat_incr
       end
       if @with_crew && ((@remaining_rounds - 1) % @rounds_per_turn).zero?
         r = future_state.resources

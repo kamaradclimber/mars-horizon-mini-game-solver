@@ -3,27 +3,27 @@
 
 require_relative 'solver'
 
-puts '---- Multicrew EVA - part 1 ---------'
-max_rounds = 11 # bad launch
-state = State.new(electricity: 6, crew: 2)
+puts '---- Mercury orbit - part 1 ---------'
+max_rounds = 16
+state = State.new(electricity: 5, data: 1)
 transformations = [
   Transformation.new(inputs: {}, outputs: { electricity: 1 }),
 
-  Transformation.new(inputs: { electricity: 1 }, outputs: { coms: 3 }), # ground control connection
-  Transformation.new(inputs: { nav: 1, data: 2 }, outputs: { coms: 5 }),
-  Transformation.new(inputs: { nav: 3 }, outputs: { coms: 6 }),
+  Transformation.new(inputs: { electricity: 1 }, outputs: { coms: 4 }),
+  Transformation.new(inputs: { electricity: 1, nav: 1 }, outputs: { coms: 4, data: 2 }),
+  Transformation.new(inputs: { data: 2 }, outputs: { coms: 6 }),
 
-  Transformation.new(inputs: { electricity: 1 }, outputs: { nav: 2 }),
-  Transformation.new(inputs: { data: 1 }, outputs: { nav: 2, coms: 1 }),
-  Transformation.new(inputs: { electricity: 1, coms: 1 }, outputs: { nav: 4 }),
+  Transformation.new(inputs: { electricity: 2 }, outputs: { data: 2 }),
+  Transformation.new(inputs: { nav: 1 }, outputs: { data: 2, coms: 1 }),
+  Transformation.new(inputs: { coms: 1, nav: 1 }, outputs: { data: 4 }),
 
-  Transformation.new(inputs: { crew: 1 }, outputs: { data: 2 }),
-  Transformation.new(inputs: { crew: 1, coms: 1 }, outputs: { nav: 4 }),
-  Transformation.new(inputs: { electricity: 1, crew: 1 }, outputs: { data: 2, nav: 2 }),
+  Transformation.new(inputs: { electricity: 2 }, outputs: { nav: 3 }),
+  Transformation.new(inputs: { coms: 3 }, outputs: { nav: 4, data: 1 }),
+  Transformation.new(inputs: { data: 2, coms: 1 }, outputs: { nav: 1, thrust: 4 }),
 ]
-objective = { nav: 20, coms: 10 }
+objective = { thrust: 14, nav: 10 }
 
-solver = OptimalSolver.new(transformations, objective, max_rounds, state, with_crew: 2)
+solver = OptimalSolver.new(transformations, objective, max_rounds, state, loose_1thrust_every_3rounds: true, rounds_per_turn: 4)
 solution = solver.run
 raise 'Could not find any solution' unless solution
 
@@ -32,27 +32,27 @@ solution.each_with_index do |t, i|
 end
 puts "Using #{solution.size} rounds out of #{max_rounds}"
 
-puts '---- Multicrew EVA - part 2 ---------'
-max_rounds = 12
-state = State.new(electricity: 6, nav: 1, crew: 2)
+puts '---- Mercury orbit - part 2 ---------'
+max_rounds = 16
+state = State.new(electricity: 5)
 transformations = [
   Transformation.new(inputs: {}, outputs: { electricity: 1 }),
 
-  Transformation.new(inputs: { electricity: 1 }, outputs: { coms: 3, angle: 1 }),
-  Transformation.new(inputs: { nav: 1, data: 2 }, outputs: { coms: 5, angle: 1 }),
-  Transformation.new(inputs: { nav: 3 }, outputs: { coms: 6, angle: 1 }),
+  Transformation.new(inputs: { electricity: 2 }, outputs: { coms: 3 }),
+  Transformation.new(inputs: { data: 1, nav: 1 }, outputs: { coms: 5 }),
+  Transformation.new(inputs: { nav: 3, heat: 2 }, outputs: { coms: 4, data: 2 }),
+
+  Transformation.new(inputs: { electricity: 1 }, outputs: { data: 3 }),
+  Transformation.new(inputs: { nav: 2 }, outputs: { data: 3 }),
+  Transformation.new(inputs: { coms: 3, heat: 1 }, outputs: { data: 3, nav: 2 }),
 
   Transformation.new(inputs: { electricity: 1 }, outputs: { nav: 3 }),
-  Transformation.new(inputs: { nav: 2, angle: 2 }, outputs: { data: 3 }),
-  Transformation.new(inputs: { coms: 3 }, outputs: { data: 3, nav: 2 }),
-
-  Transformation.new(inputs: { crew: 1, angle: 1 }, outputs: { data: 2 }),
-  Transformation.new(inputs: { crew: 1, coms: 1 }, outputs: { nav: 4 }),
-  Transformation.new(inputs: { electricity: 1, crew: 1 }, outputs: { data: 2, nav: 2 }),
+  Transformation.new(inputs: { electricity: 2, data: 1, heat: 1 }, outputs: { nav: 6 }),
+  Transformation.new(inputs: { data: 2 }, outputs: { nav: 3, coms: 3 }),
 ]
-objective = { coms: 12, data: 12, angle: (-2..2) }
+objective = { coms: 10, nav: 10, data: 10 }
 
-solver = OptimalSolver.new(transformations, objective, max_rounds, state, with_crew: 2)
+solver = OptimalSolver.new(transformations, objective, max_rounds, state, rounds_per_turn: 4, max_heat: 5, heat_incr: 5)
 solution = solver.run
 raise 'Could not find any solution' unless solution
 

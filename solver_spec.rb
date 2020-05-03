@@ -2,6 +2,41 @@ require_relative 'solver'
 require 'rspec'
 
 describe World do
+  # this solves and return resulting state
+  let(:result_state) do
+    plan = subject
+    plan.inject(init_state) do |state, transformation|
+      state.apply(transformation)
+    end
+  end
+
+  context 'when max_heat is set' do
+    subject do
+      World.new(transformations, objective, remaining_rounds, init_state, max_heat: 5, heat_incr: 5).solve
+    end
+    let(:transformations) do
+      [
+        Transformation.new(inputs: {}, outputs: { electricity: 1 }),
+      ]
+    end
+    let(:objective) do
+      { electricity: 5 }
+    end
+    let(:remaining_rounds) { 12 }
+
+    let(:init_state) do
+      State.new(apple: 3)
+    end
+
+    it 'finds a solution because it does not overheat' do
+      expect(subject).not_to be_nil
+    end
+
+    it 'is a valid solution' do
+      result_state.achieved?(objective)
+    end
+  end
+
   context 'when loose_1thrust_every_3rounds is true' do
     subject do
       World.new(transformations, objective, remaining_rounds, init_state, loose_1thrust_every_3rounds: true).solve
@@ -21,14 +56,6 @@ describe World do
     let(:remaining_rounds) { 12 }
     let(:init_state) do
       State.new(apple: 3)
-    end
-
-    # this solves and return resulting state
-    let(:result_state) do
-      plan = subject
-      plan.inject(init_state) do |state, transformation|
-        state.apply(transformation)
-      end
     end
 
     it 'finds a solution' do
