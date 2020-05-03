@@ -123,7 +123,7 @@ class World
         r = future_state.resources
         r[:heat] ||= 0
         r[:heat] += @heat_incr
-        return nil if r[:heat] >= 5 # heat failure
+        return nil if r[:heat] >= @max_heat # heat failure
       end
       if @with_crew && ((@remaining_rounds - 1) % @rounds_per_turn).zero?
         r = future_state.resources
