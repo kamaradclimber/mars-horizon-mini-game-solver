@@ -116,20 +116,23 @@ class World
     sorted_transformations.lazy.map do |transformation|
       future_state = @current_state.dup.apply(transformation)
       # TODO(g.seux): we should compute according to number of elapsed rounds instead
-      if @loose_1thrust_every_3rounds && ((@remaining_rounds - 1) % @rounds_per_turn).zero?
-        r = future_state.resources
-        r[:thrust] -= 1 if r[:thrust] && r[:thrust] > 0
-      end
-      if @max_heat && ((@remaining_rounds - 1) % @rounds_per_turn).zero?
-        r = future_state.resources
-        r[:heat] ||= 0
-        return nil if r[:heat] >= @max_heat # heat failure
+      elapsed_rounds = @opts[:max_rounds] - @remaining_rounds - 1
+      if elapsed_rounds > 0 && (elapsed_rounds % @rounds_per_turn).zero?
+        if @loose_1thrust_every_3rounds
+          r = future_state.resources
+          r[:thrust] -= 1 if r[:thrust] && r[:thrust] > 0
+        end
+        if @max_heat
+          r = future_state.resources
+          r[:heat] ||= 0
+          return nil if r[:heat] >= @max_heat # heat failure
 
-        r[:heat] += @heat_incr
-      end
-      if @with_crew && ((@remaining_rounds - 1) % @rounds_per_turn).zero?
-        r = future_state.resources
-        r[:crew] = @with_crew # reset crew
+          r[:heat] += @heat_incr
+        end
+        if @with_crew
+          r = future_state.resources
+          r[:crew] = @with_crew # reset crew
+        end
       end
       world = World.new(@transformations, @objective, @remaining_rounds - 1, future_state, @opts)
       res = world.solve
@@ -145,6 +148,7 @@ class OptimalSolver
     @max_rounds = max_rounds
     @init_state = init_state
     @opts = opts
+    @opts.merge!(max_rounds: @max_rounds)
   end
 
   def run

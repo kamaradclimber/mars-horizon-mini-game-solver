@@ -38,16 +38,16 @@ state = State.new(electricity: 5)
 transformations = [
   Transformation.new(inputs: {}, outputs: { electricity: 1 }),
 
-  Transformation.new(inputs: { electricity: 2 }, outputs: { coms: 3 }),
+  Transformation.new(inputs: { electricity: 2, heat: 2 }, outputs: { coms: 3 }),
   Transformation.new(inputs: { data: 1, nav: 1 }, outputs: { coms: 5 }),
-  Transformation.new(inputs: { nav: 3, heat: 2 }, outputs: { coms: 4, data: 2 }),
+  Transformation.new(inputs: { nav: 3, heat: 1 }, outputs: { coms: 4, data: 2 }),
 
   Transformation.new(inputs: { electricity: 1 }, outputs: { data: 3 }),
-  Transformation.new(inputs: { nav: 2 }, outputs: { data: 3 }),
-  Transformation.new(inputs: { coms: 3, heat: 1 }, outputs: { data: 3, nav: 2 }),
+  Transformation.new(inputs: { nav: 2, heat: 1 }, outputs: { data: 3 }),
+  Transformation.new(inputs: { coms: 3 }, outputs: { data: 3, nav: 2 }),
 
   Transformation.new(inputs: { electricity: 1 }, outputs: { nav: 3 }),
-  Transformation.new(inputs: { electricity: 2, data: 1, heat: 1 }, outputs: { nav: 6 }),
+  Transformation.new(inputs: { electricity: 2, data: 1 }, outputs: { nav: 6 }),
   Transformation.new(inputs: { data: 2 }, outputs: { nav: 3, coms: 3 }),
 ]
 objective = { coms: 10, nav: 10, data: 10 }
