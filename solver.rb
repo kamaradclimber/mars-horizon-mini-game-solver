@@ -26,7 +26,12 @@ class State
 
   def can_apply?(transformation)
     transformation.inputs.all? do |resource, quantity|
-      @resources[resource] && @resources[resource] >= quantity
+      case resource
+      when :angle # special case for negative resource, we can always afford them
+        true
+      else
+        @resources[resource] && @resources[resource] >= quantity
+      end
     end
   end
 
@@ -36,6 +41,7 @@ class State
 
   def apply(transformation)
     transformation.inputs.each do |resource, quantity|
+      @resources[resource] ||= 0
       @resources[resource] -= quantity
     end
     transformation.outputs.each do |resource, quantity|
@@ -48,17 +54,32 @@ class State
   def distance_of(objective)
     objective.map do |resource, quantity|
       available = @resources[resource] || 0
-      if available >= quantity
-        0
+      case quantity
+      when Integer
+        (quantity - [available, quantity].min)**2
+      when Range
+        if quantity.cover?((@resources[resource] || 0))
+          0
+        else
+          target = (quantity.max - quantity.min) / 2
+          (available - target)**2
+        end
       else
-        (quantity - available)**2
+        raise NotImplementedError, "#{quantity.class} is not handled"
       end
     end.sum
   end
 
   def achieved?(objective)
     objective.all? do |resource, quantity|
-      (@resources[resource] || 0) >= quantity
+      case quantity
+      when Integer
+        (@resources[resource] || 0) >= quantity
+      when Range
+        quantity.cover?((@resources[resource] || 0))
+      else
+        raise NotImplementedError, "#{quantity.class} is not handled"
+      end
     end
   end
 end
