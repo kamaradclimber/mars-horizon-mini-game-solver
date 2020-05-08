@@ -11,7 +11,7 @@ module Emojifier
       '💾'
     when :heat
       '🔥'
-    when :trust
+    when :thrust
       '🚀'
     when :nav
       '🧭'
@@ -129,6 +129,18 @@ class Solution
 
   def size
     count
+  end
+
+  def inspect
+    output = ''
+    last = nil
+    each_with_index do |t, i|
+      output += "\nState at stage #{i}: #{t[:state]},  recommended action: #{t[:next]}"
+      last = t[:state]
+    end
+    output += "\n\nObjective #{last.achieved?(@objective) ? '👍' : '❌'}: #{@objective.inspect}"
+    output += "\nUsing #{size} rounds out of #{@total_rounds}"
+    output
   end
 
   def each

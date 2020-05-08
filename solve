@@ -27,10 +27,7 @@ solver = OptimalSolver.new(transformations, objective, max_rounds, state, loose_
 solution = solver.run
 raise 'Could not find any solution' unless solution
 
-solution.each_with_index do |t, i|
-  puts "#{i + 1}: #{t}"
-end
-puts "Using #{solution.size} rounds out of #{max_rounds}"
+puts solution.inspect
 
 puts '---- Mercury orbit - part 2 ---------'
 max_rounds = 16
@@ -56,7 +53,4 @@ solver = OptimalSolver.new(transformations, objective, max_rounds, state, rounds
 solution = solver.run
 raise 'Could not find any solution' unless solution
 
-solution.each_with_index do |t, i|
-  puts "#{i + 1}: #{t}"
-end
-puts "Using #{solution.size} rounds out of #{max_rounds}"
+puts solution.inspect
