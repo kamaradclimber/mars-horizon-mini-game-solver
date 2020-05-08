@@ -1,6 +1,29 @@
 require 'timeout'
 
+module Emojifier
+  def convert(type)
+    case type
+    when :electricity
+      '⚡'
+    when :coms
+      '📻'
+    when :data
+      '💾'
+    when :heat
+      '🔥'
+    when :trust
+      '🚀'
+    when :nav
+      '🧭'
+    else
+      " #{type}"
+    end
+  end
+end
+
 class Transformation
+  include Emojifier
+
   def initialize(inputs:, outputs:)
     @inputs = inputs
     @outputs = outputs
@@ -8,8 +31,8 @@ class Transformation
   attr_reader :inputs, :outputs
 
   def to_s
-    ins = inputs.map { |r, q| "#{q} #{r}" }.join(', ')
-    ous = outputs.map { |r, q| "#{q} #{r}" }.join(', ')
+    ins = inputs.map { |r, q| "#{q}#{convert(r)}" }.join(', ')
+    ous = outputs.map { |r, q| "#{q}#{convert(r)}" }.join(', ')
     "#{ins} => #{ous}"
   end
 
@@ -19,13 +42,15 @@ class Transformation
 end
 
 class State
+  include Emojifier
+
   attr_reader :resources
   def initialize(resources)
     @resources = resources.dup
   end
 
   def to_s
-    resources.map { |r, q| "#{q} #{r}" }.join(', ')
+    resources.map { |r, q| "#{q}#{convert(r)}" }.join(', ')
   end
 
   def inspect
