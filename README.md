@@ -1,4 +1,4 @@
-===== Mars horizon mini-game solver =====
+## Mars horizon mini-game solver ##
 
 Gives guidance during mars solver mini-games.
 
@@ -11,7 +11,7 @@ Downsides:
 * does not predict incidents
 * when heat gain is random, solver accounts for the worst case. This is a downside since many interesting reactions requires heat. User need to delay those reactions until enough heat
 
-= How to use =
+### How to use ###
 
 Enter parameters in solve, then run ./solve
 
