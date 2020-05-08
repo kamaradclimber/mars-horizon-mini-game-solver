@@ -12,7 +12,7 @@ transformations = [
 ]
 objective = { data: 2, coms: 1 }
 
-w = World.new(transformations, objective, 4, state)
+w = World.new(transformations, objective, 4, state, max_rounds: 4)
 solution = w.solve
 raise 'Could not find any solution' unless solution
 
@@ -77,6 +77,7 @@ solution.each_with_index do |t, i|
   puts "#{i + 1}: #{t}"
 end
 puts "Using #{solution.size} rounds out of #{max_rounds}"
+
 
 puts '---- Venus crasher - part 2 ---------'
 state = State.new(electricity: 6, heat: 2)

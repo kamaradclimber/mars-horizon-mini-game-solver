@@ -12,6 +12,10 @@ class Transformation
     ous = outputs.map { |r, q| "#{q} #{r}" }.join(', ')
     "#{ins} => #{ous}"
   end
+
+  def inspect
+    to_s
+  end
 end
 
 class State
@@ -22,6 +26,10 @@ class State
 
   def to_s
     resources.map { |r, q| "#{q} #{r}" }.join(', ')
+  end
+
+  def inspect
+    to_s
   end
 
   def can_apply?(transformation)
@@ -84,6 +92,35 @@ class State
   end
 end
 
+class Solution
+  include Enumerable
+  def initialize(init_state, steps, total_rounds, objective, opts)
+    @init_state = init_state
+    @steps = steps
+    @total_rounds = total_rounds
+    @objective = objective
+    @opts = opts.merge(max_rounds: total_rounds)
+  end
+
+  def size
+    count
+  end
+
+  def each
+    current_state = @init_state
+    remaining_rounds = @total_rounds
+    elapsed_rounds = 0
+    @steps.map do |transformation|
+      yield({ state: current_state, next: transformation })
+      w = World.new([], @objective, remaining_rounds, current_state, @opts)
+      elapsed_rounds += 1
+      remaining_rounds -= 1
+      current_state = w.apply(transformation, elapsed_rounds)
+    end
+    yield({ state: current_state, next: nil })
+  end
+end
+
 class World
   def initialize(transformations, objective, remaining_rounds, init_state, opts = {})
     @transformations = transformations
@@ -96,6 +133,29 @@ class World
     @with_crew = opts[:with_crew] || false
     @heat_incr = opts[:heat_incr] || 2
     @rounds_per_turn = opts[:rounds_per_turn] || 3
+  end
+
+  # @returns nil in case of mission failure (overheat for instance)
+  def apply(transformation, elapsed_rounds)
+    future_state = @current_state.dup.apply(transformation)
+    if elapsed_rounds > 0 && (elapsed_rounds % @rounds_per_turn).zero?
+      if @loose_1thrust_every_3rounds
+        r = future_state.resources
+        r[:thrust] -= 1 if r[:thrust] && r[:thrust] > 0
+      end
+      if @max_heat
+        r = future_state.resources
+        r[:heat] ||= 0
+        return nil if r[:heat] >= @max_heat # heat failure
+
+        r[:heat] += @heat_incr
+      end
+      if @with_crew
+        r = future_state.resources
+        r[:crew] = @with_crew # reset crew
+      end
+    end
+    future_state
   end
 
   # return nil if nothing is possible
@@ -114,26 +174,10 @@ class World
     return nil if sorted_transformations.empty?
 
     sorted_transformations.lazy.map do |transformation|
-      future_state = @current_state.dup.apply(transformation)
-      # TODO(g.seux): we should compute according to number of elapsed rounds instead
       elapsed_rounds = @opts[:max_rounds] - @remaining_rounds - 1
-      if elapsed_rounds > 0 && (elapsed_rounds % @rounds_per_turn).zero?
-        if @loose_1thrust_every_3rounds
-          r = future_state.resources
-          r[:thrust] -= 1 if r[:thrust] && r[:thrust] > 0
-        end
-        if @max_heat
-          r = future_state.resources
-          r[:heat] ||= 0
-          return nil if r[:heat] >= @max_heat # heat failure
+      future_state = apply(transformation, elapsed_rounds)
+      return nil unless future_state # apply can returns nil in case of error
 
-          r[:heat] += @heat_incr
-        end
-        if @with_crew
-          r = future_state.resources
-          r[:crew] = @with_crew # reset crew
-        end
-      end
       world = World.new(@transformations, @objective, @remaining_rounds - 1, future_state, @opts)
       res = world.solve
       [transformation] + res if res
@@ -168,6 +212,6 @@ class OptimalSolver
       puts(new_best_sol ? 'OK' : 'NOK')
       rounds -= 1
     end
-    best_sol
+    Solution.new(@init_state, best_sol, @max_rounds, @objective, @opts)
   end
 end
